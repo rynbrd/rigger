@@ -1,0 +1,73 @@
+#!/bin/sh
+# Run the builder. Locally installs prereqs needed by the builder.
+
+PACKER_VERSION=0.5.2
+PACKER_BASE_URL="https://dl.bintray.com/mitchellh/packer"
+
+HERE=$(cd "$(dirname "$0")"; pwd)
+DATA="$HERE/.data"
+TMP="$DATA/tmp"
+VENV="$DATA/venv"
+PACKER="$DATA/packer"
+LOG="$DATA/run.log"
+
+log() {
+	cat >> "$LOG"
+}
+
+info() {
+	echo -e "\e[0;32m>>\e[0m" "$@" >&2
+	echo ">>" "$@" >> "$LOG"
+}
+
+warn() {
+	echo -e "\e[0;33m>>\e[0m" "$@" >&2
+	echo ">>" "$@" >> "$LOG"
+}
+
+error() {
+	echo -e "\e[0;31m>>\e[0m" "$@" >&2
+	echo ">>" "$@" >> "$LOG"
+}
+
+fatal() {
+	error "$@"
+	exit 1
+}
+
+init() {
+	rm -f "$LOG"
+	mkdir -p "$TMP" || fatal "Failed to create temporary directory."
+}
+
+packer_version() {
+	# Print the current packer version or an empty string if not installed
+	if [ -x "$PACKER/packer" ]; then
+		"$PACKER/packer" --version | sed 's/.*v//' 2> /dev/null
+	fi
+}
+
+packer_install() {
+	# Install packer if it's not present.
+	PATH="$PACKER:$PATH"
+	test "$(packer_version)" == "$PACKER_VERSION" && return 0
+
+	info "Packer: Initializing directories."
+	test -e "$PACKER" && rm -rf "$PACKER"
+	mkdir -p "$PACKER" | log || fatal "Packer: Creation of '$PACKER' failed."
+	local platform=$(uname -s | tr '[:upper:]' '[:lower:]')
+	local url="$PACKER_BASE_URL/${PACKER_VERSION}_${platform}_amd64.zip"
+	local dest="$TMP/packer_${PACKER_VERSION}_${platform}_amd64.zip"
+	if ! [ -e "$dest" ]; then
+		info "Packer: Downloading to '$dest'."
+		wget -q "$url" -O "$dest" | log || fatal "Packer: Download from '$url' failed."
+	else
+		info "Packer: Using cached archive at '$dest'."
+	fi
+	info "Packer: Installing to '$PACKER'."
+	cd "$PACKER" || fatal "Packer: Failed to cd to '$PACKER'."
+	unzip -o "$dest" 2>&1 | log || fatal "Packer: Failed to extract archive."
+}
+
+init
+packer_install
