@@ -69,5 +69,14 @@ packer_install() {
 	unzip -o "$dest" 2>&1 | log || fatal "Packer: Failed to extract archive."
 }
 
+build() {
+	cd "$HERE"
+	test -z "$1" && fatal "usage: TEMPLATE [PACKER_OPTIONS]"
+	local tpl="templates/$1/template.json"
+	shift
+	packer build "$@" "$tpl"
+}
+
 init
 packer_install
+build "$@"
