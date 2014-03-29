@@ -19,11 +19,6 @@ info() {
 	echo ">>" "$@" >> "$LOG"
 }
 
-warn() {
-	echo -e "\e[0;33m>>\e[0m" "$@" >&2
-	echo ">>" "$@" >> "$LOG"
-}
-
 error() {
 	echo -e "\e[0;31m>>\e[0m" "$@" >&2
 	echo ">>" "$@" >> "$LOG"
