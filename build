@@ -7,7 +7,6 @@ PACKER_BASE_URL="https://dl.bintray.com/mitchellh/packer"
 HERE=$(cd "$(dirname "$0")"; pwd)
 DATA="$HERE/.data"
 TMP="$DATA/tmp"
-VENV="$DATA/venv"
 PACKER="$DATA/packer"
 LOG="$DATA/run.log"
 
