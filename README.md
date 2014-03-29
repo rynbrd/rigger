@@ -40,5 +40,5 @@ Builder is currently called as follows:
 License
 -------
 This software project is licensed under the BSD-derived license and is
-copyright (c) 2013 Ryan Bourgeois. A copy of the license is included in the
+copyright (c) 2014 Ryan Bourgeois. A copy of the license is included in the
 LICENSE file. If it is missing then a copy may be found on the project page.
