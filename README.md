@@ -4,7 +4,7 @@ A tool to build OS images in a repeatable fashion. Used primarily to seed Rig
 with images that are useful.
 
 How It Works
-============
+------------
 Builder's primary purpose is to enforce repeatability in the image build
 process while maintaining ease of use. It maintains specific versions of its
 own dependencies in an effort to minimize the effects of version changes. It
@@ -24,7 +24,7 @@ Builder keeps its cached dependencies, as well as a log of the last run, in
 _.data_. The Packer cache is also kept under this location.
 
 Calling Builder
-===============
+---------------
 Builder is currently called as follows:
 
   ./builder TEMPLATE VERSION [NAME=VALUE [...]]
