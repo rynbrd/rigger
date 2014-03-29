@@ -34,3 +34,9 @@ Builder is currently called as follows:
 - *VERSION*: This is the version of the image to build. This is passed to Packer as the _version_ user variable.
 
 - *NAME=VALUE*: Additional user variables to pass to Packer.
+
+License
+-------
+This software project is licensed under the BSD-derived license and is
+copyright (c) 2013 Ryan Bourgeois. A copy of the license is included in the
+LICENSE file. If it is missing then a copy may be found on the project page.
