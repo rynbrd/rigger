@@ -1,11 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 # Run the builder. Locally installs prereqs needed by the builder.
 
 PACKER_VERSION=0.5.2
 PACKER_BASE_URL="https://dl.bintray.com/mitchellh/packer"
 
 HERE=$(cd "$(dirname "$0")"; pwd)
+TEMPLATES="$HERE/templates"
+IMAGES="$HERE/images"
 DATA="$HERE/.data"
+CACHE="$DATA/cache"
 TMP="$DATA/tmp"
 PACKER="$DATA/packer"
 LOG="$DATA/run.log"
@@ -32,6 +35,7 @@ fatal() {
 init() {
 	rm -f "$LOG"
 	mkdir -p "$TMP" || fatal "Failed to create temporary directory."
+	mkdir -p "$IMAGES" || fatal "Failed to create images directory."
 }
 
 packer_version() {
@@ -63,12 +67,32 @@ packer_install() {
 	unzip -o "$dest" 2>&1 | log || fatal "Packer: Failed to extract archive."
 }
 
+usage() {
+	test -n "$1" && error "$@"
+	info "usage: build IMAGE VERSION [NAME=VALUE [...]]"
+	test -n "$1" && exit 1
+}
+
 build() {
-	cd "$HERE"
-	test -z "$1" && fatal "usage: TEMPLATE [PACKER_OPTIONS]"
-	local tpl="templates/$1/template.json"
-	shift
-	packer build "$@" "$tpl"
+	# usage: build IMAGE VERSION [NAME=VALUE [...]]
+	test -n "$1" || usage "No image template provided."
+	test -n "$2" || usage "No version provided."
+	local name="$1"
+	local version="$2"
+	shift; shift
+
+	local vars=()
+	vars+=(-var "version=$version")
+	vars+=(-var "images=$IMAGES")
+	for var in "$@"; do
+		vars+=(-var "$var")
+	done
+
+	local image="$TEMPLATES/$name"
+	test -d "$image" || fatal "Image template '$name' not found."
+	cd "$image" || fatal "Failed to cd to '$image'."
+	test -f template.json || fatal "Image template '$name' is missing template.json."
+	PACKER_CACHE_DIR="$CACHE" packer build "${vars[@]}" template.json | tee -a "$LOG"
 }
 
 init
