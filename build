@@ -14,17 +14,25 @@ PACKER="$DATA/packer"
 LOG="$DATA/run.log"
 
 log() {
-	cat >> "$LOG"
+	if [ $# -eq 0 ]; then
+		cat >> "$LOG"
+	else
+		echo "$@" >> "$LOG"
+	fi
+}
+
+stderr() {
+	echo "$@" >&2
 }
 
 info() {
-	echo -e "\e[0;32m>>\e[0m" "$@" >&2
-	echo ">>" "$@" >> "$LOG"
+	stderr -e "\e[0;32m>>\e[0m" "$@"
+	log ">>" "$@"
 }
 
 error() {
-	echo -e "\e[0;31m>>\e[0m" "$@" >&2
-	echo ">>" "$@" >> "$LOG"
+	stderr -e "\e[0;31m>>\e[0m" "$@"
+	log ">>" "$@"
 }
 
 fatal() {
@@ -69,7 +77,7 @@ packer_install() {
 
 usage() {
 	test -n "$1" && error "$@"
-	info "usage: build IMAGE VERSION [NAME=VALUE [...]]"
+	stderr "usage: build IMAGE VERSION [NAME=VALUE [...]]"
 	test -n "$1" && exit 1
 }
 
