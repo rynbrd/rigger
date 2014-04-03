@@ -13,12 +13,13 @@ around how Packer is called.
 
 Builder has two directories related to the image build process. These are:
 
-- __templates__ Image templates are stored in subdirectories of this path.
-  Each template should have a template.json which Packer will execute. Builder
-  will cd to the template's directory before calling Packer easing the use of
-  relative paths in the template.json file.
+- __sources__ Image sources are stored in subdirectories of this path. Each
+  source should have a template.json which Packer will execute. Builder will cd
+  to the sources's directory before calling Packer easing the use of relative
+  paths in the template.json file.
 
-- __images__ When applicable image outputs are placed in this location.
+- __artifacts__ Image builder outputs are placed in this location. The path to
+  this is passed to the packer template in the _artifacts_ user variable.
 
 Builder keeps its cached dependencies, as well as a log of the last run, in
 _.data_. The Packer cache is also kept under this location.
@@ -27,13 +28,16 @@ Calling Builder
 ---------------
 Builder is currently called as follows:
 
-  ./builder TEMPLATE VERSION [NAME=VALUE [...]]
+  ./builder -s SOURCE -v VERSION [-p PLATFORMS] [-u NAME=VALUE [...]]
 
-- __TEMPLATE__ This is the name of a subdirectory under _templates_ containin
-  the image definition.
+- __SOURCE__ This is the name of a subdirectory under _sources_ containing the
+  image source definition.
 
 - __VERSION__ This is the version of the image to build. This is passed to
   Packer as the _version_ user variable.
+
+- __PLATFORMS__ The platforms to build for. Default to all platforms in a
+  source.
 
 - __NAME=VALUE__ Additional user variables to pass to Packer.
 
