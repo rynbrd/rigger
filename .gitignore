@@ -1,4 +1,5 @@
 .data
 *.sw*
-images
 packer_cache
+sources
+templates

@@ -4,9 +4,11 @@
 PACKER_VERSION=0.5.2
 PACKER_BASE_URL="https://dl.bintray.com/mitchellh/packer"
 
+USAGE="usage: $(basename "$0") -s SOURCE -v VERSION [-p PLATFORMS] [-u NAME=VALUE [...]]"
+
 HERE=$(cd "$(dirname "$0")"; pwd)
-TEMPLATES="$HERE/templates"
-IMAGES="$HERE/images"
+SOURCES="$HERE/sources"
+ARTIFACTS="$HERE/artifacts"
 DATA="$HERE/.data"
 CACHE="$DATA/cache"
 TMP="$DATA/tmp"
@@ -43,7 +45,8 @@ fatal() {
 init() {
 	rm -f "$LOG"
 	mkdir -p "$TMP" || fatal "Failed to create temporary directory."
-	mkdir -p "$IMAGES" || fatal "Failed to create images directory."
+	mkdir -p "$SOURCES" || fatal "Failed to create templates directory."
+	mkdir -p "$ARTIFACTS" || fatal "Failed to create artifacts directory."
 }
 
 packer_version() {
@@ -76,33 +79,80 @@ packer_install() {
 }
 
 usage() {
-	test -n "$1" && error "$@"
-	stderr "usage: build IMAGE VERSION [NAME=VALUE [...]]"
-	test -n "$1" && exit 1
+	test -n "$1" && stderr "$@"
+	stderr "$USAGE"
+	exit 1
 }
 
-build() {
-	# usage: build IMAGE VERSION [NAME=VALUE [...]]
-	test -n "$1" || usage "No image template provided."
-	test -n "$2" || usage "No version provided."
-	local name="$1"
-	local version="$2"
-	shift; shift
+help() {
+	stderr "$USAGE"
+	stderr ""
+	stderr "Options:"
+	stderr "  -s SOURCE         The image to build. Must be a valid directory in templates."
+	#stderr "  -s SOURCE         The image source to build from. Must be a valid directory"
+	#stderr "                    in templates or a remote git repository. Required."
+	stderr "  -v VERSION        The version of the image to build. Required."
+	stderr "  -p PLATFORMS      A comma separated list of platforms to build. Defaults to"
+	stderr "					all platforms."
+	stderr "  -u NAME=VALUE     User data to pass to Packer."
+	stderr "  -h                This message."
+}
+
+options() {
+	# Parse commandline options.
+	SOURCE=
+	VERSION=
+	PLATFORMS=
+	USERDATA=()
+	while getopts "s:v:p:u:h" OPTION; do
+		case "$OPTION" in
+		s)
+			SOURCE="$OPTARG"
+			;;
+		v)
+			VERSION="$OPTARG"
+			;;
+		p)
+			PLATFORMS="$OPTARG"
+			;;
+		u)
+			USERDATA+=("$OPTARG")
+			;;
+		h)
+			help
+			exit 0
+			;;
+		esac
+	done
+	shift $(($OPTIND - 1))
+
+	test -n "$SOURCE" || usage "Image source is required."
+	test -n "$VERSION" || usage "Version is required."
+}
+
+build_images() {
+	# Build images using the configured options.
+	local source_path="$SOURCES/$SOURCE"
+	test -d "$source_path" || fatal "Image source '$SOURCE' not found."
+	cd "$source_path" || fatal "Failed to cd to '$source_path'."
+	test -f template.json || fatal "Image source '$SOURCE' is missing template.json."
+
+	local only=()
+	if [ -n "$PLATFORMS" ]; then
+		only=(-only "$PLATFORMS")
+	fi
 
 	local vars=()
-	vars+=(-var "version=$version")
-	vars+=(-var "images=$IMAGES")
-	for var in "$@"; do
+	vars+=(-var "version=$VERSION")
+	vars+=(-var "artifacts=$ARTIFACTS")
+	for var in "${USERDATA[@]}"; do
 		vars+=(-var "$var")
 	done
 
-	local image="$TEMPLATES/$name"
-	test -d "$image" || fatal "Image template '$name' not found."
-	cd "$image" || fatal "Failed to cd to '$image'."
-	test -f template.json || fatal "Image template '$name' is missing template.json."
-	PACKER_CACHE_DIR="$CACHE" packer build "${vars[@]}" template.json | tee -a "$LOG"
+	PACKER_CACHE_DIR="$CACHE" packer build -force "${only[@]}" "${vars[@]}" template.json | tee -a "$LOG"
 }
 
 init
+options "$@"
 packer_install
-build "$@"
+build_images
