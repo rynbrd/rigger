@@ -143,12 +143,11 @@ build_images() {
 	fi
 
 	local vars=()
-	vars+=(-var "version=$VERSION")
-	vars+=(-var "artifacts=$ARTIFACTS")
 	for var in "${USERDATA[@]}"; do
 		vars+=(-var "$var")
 	done
 
+	export ARTIFACTS VERSION
 	PACKER_CACHE_DIR="$CACHE" packer build -force "${only[@]}" "${vars[@]}" template.json | tee -a "$LOG"
 }
 
