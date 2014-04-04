@@ -208,6 +208,9 @@ build_images() {
 
 	export ARTIFACTS VERSION
 	PACKER_CACHE_DIR="$CACHE" packer build -force "${packer_args[@]}" template.json | tee -a "$LOG"
+	local res=$?
+	rmdir --ignore-fail-on-non-empty "$BASE/packer_cache"
+	return $res
 }
 
 init
