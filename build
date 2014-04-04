@@ -102,7 +102,7 @@ options() {
 	# Parse commandline options.
 	SOURCE=
 	VERSION=
-	PLATFORMS=
+	PLATFORMS=()
 	USERDATA=()
 	while getopts "s:v:p:u:h" OPTION; do
 		case "$OPTION" in
@@ -113,7 +113,9 @@ options() {
 			VERSION="$OPTARG"
 			;;
 		p)
-			PLATFORMS="$OPTARG"
+			for item in ${OPTARG/,/ }; do
+				PLATFORMS+=("$item")
+			done
 			;;
 		u)
 			USERDATA+=("$OPTARG")
@@ -137,18 +139,17 @@ build_images() {
 	cd "$source_path" || fatal "Failed to cd to '$source_path'."
 	test -f template.json || fatal "Image source '$SOURCE' is missing template.json."
 
-	local only=()
-	if [ -n "$PLATFORMS" ]; then
-		only=(-only "$PLATFORMS")
+	local packer_args=()
+	if [ ${#PLATFORMS[@]} -ne 0 ]; then
+		packer_args+=(-only "$(echo "${PLATFORMS[@]}" | sed 's/ /,/g')")
 	fi
 
-	local vars=()
 	for var in "${USERDATA[@]}"; do
-		vars+=(-var "$var")
+		packer_args+=(-var "$var")
 	done
 
 	export ARTIFACTS VERSION
-	PACKER_CACHE_DIR="$CACHE" packer build -force "${only[@]}" "${vars[@]}" template.json | tee -a "$LOG"
+	PACKER_CACHE_DIR="$CACHE" packer build -force "${packer_args[@]}" template.json | tee -a "$LOG"
 }
 
 init
