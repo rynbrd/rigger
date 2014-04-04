@@ -139,6 +139,11 @@ build_images() {
 	cd "$source_path" || fatal "Failed to cd to '$source_path'."
 	test -f template.json || fatal "Image source '$SOURCE' is missing template.json."
 
+	if [ -x "configure" ]; then
+		info "Sourcing configure."
+		source ./configure || fatal "Failed to source configure."
+	fi
+
 	local packer_args=()
 	if [ ${#PLATFORMS[@]} -ne 0 ]; then
 		packer_args+=(-only "$(echo "${PLATFORMS[@]}" | sed 's/ /,/g')")
