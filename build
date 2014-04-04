@@ -6,10 +6,10 @@ PACKER_BASE_URL="https://dl.bintray.com/mitchellh/packer"
 
 USAGE="usage: $(basename "$0") -s SOURCE -v VERSION [-p PLATFORMS] [-u NAME=VALUE [...]]"
 
-HERE=$(cd "$(dirname "$0")"; pwd)
-SOURCES="$HERE/sources"
-ARTIFACTS="$HERE/artifacts"
-DATA="$HERE/.data"
+BASE=$(cd "$(dirname "$0")"; pwd)
+SOURCES="$BASE/sources"
+ARTIFACTS="$BASE/artifacts"
+DATA="$BASE/.data"
 CACHE="$DATA/cache"
 TMP="$DATA/tmp"
 PACKER="$DATA/packer"
