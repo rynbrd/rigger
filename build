@@ -4,7 +4,7 @@
 PACKER_VERSION=0.5.2
 PACKER_BASE_URL="https://dl.bintray.com/mitchellh/packer"
 
-USAGE="usage: $(basename "$0") -s SOURCE -v VERSION [-p PLATFORMS] [-u NAME=VALUE [...]]"
+USAGE="usage: $(basename "$0") -s SOURCE -v VERSION [-b BRANCH] [-p PLATFORMS] [-u NAME=VALUE [...]]"
 
 BASE=$(cd "$(dirname "$0")"; pwd)
 SOURCES="$BASE/sources"
@@ -78,6 +78,44 @@ packer_install() {
 	unzip -o "$dest" 2>&1 | log || fatal "Packer: Failed to extract archive."
 }
 
+git_is_url() {
+	# Check if it's a git URL.
+	echo "$1" | egrep -iq '^((ssh)|(git)|(http(s)?)|(ftp(s)?)|(rsync)://)|([^ ]+@)[a-z0-9._-]+(([:/][[a-z0-9._-])|$)'
+}
+
+git_name() {
+	# Get the name of a repo from the URL.
+	echo "$1" | sed -re 's|\.git(/)?$||g' -e 's|.*./||g'
+}
+
+git_clone() {
+	# Clone or fetch changes to a repo.
+	local repo="$1"
+	local dest="$2"
+	local branch="$3"
+	test -z $branch && branch="master"
+
+	if [ -e "${dest}/.git" ]; then
+		# repo exists, update it
+		info "Git: Fetching latest changes to ${branch}."
+		cd "$dest" || fatal "Git: Failed to cd to destination."
+		if ! git diff-index --quiet HEAD --; then
+			git stash || error "Git: Failed to stash changes."
+		fi
+		git fetch -q origin || fatal "Git: Failed to fetch from origin."
+	else
+		# repo is missing, clone it
+		info "Git: Cloning $repo into ${dest}."
+		mkdir -p $(dirname "$dest") || fatal "Git: Failed to create destination."
+		git clone -q "$repo" "$dest" || fatal "Git: Failed to clone repo."
+		cd "$dest" || fatal "Git: Failed to cd to destination."
+	fi
+
+	git checkout -q "$branch" || fatal "Git: Failed to checkout ${branch}."
+	git submodule -q update --init --recursive || fatal "Git: Failed to update submodules."
+	cd - > /dev/null
+}
+
 usage() {
 	test -n "$1" && stderr "$@"
 	stderr "$USAGE"
@@ -88,10 +126,10 @@ help() {
 	stderr "$USAGE"
 	stderr ""
 	stderr "Options:"
-	stderr "  -s SOURCE         The image to build. Must be a valid directory in templates."
-	#stderr "  -s SOURCE         The image source to build from. Must be a valid directory"
-	#stderr "                    in templates or a remote git repository. Required."
+	stderr "  -s SOURCE         The image source to build from. Must be a valid directory"
+	stderr "                    in templates or a remote git repository. Required."
 	stderr "  -v VERSION        The version of the image to build. Required."
+	stderr "  -b BRANCH         If source is a git repo check out this branch."
 	stderr "  -p PLATFORMS      A comma separated list of platforms to build. Defaults to"
 	stderr "					all platforms."
 	stderr "  -u NAME=VALUE     User data to pass to Packer."
@@ -100,17 +138,27 @@ help() {
 
 options() {
 	# Parse commandline options.
+	REPO=
 	SOURCE=
 	VERSION=
+	BRANCH=
 	PLATFORMS=()
 	USERDATA=()
 	while getopts "s:v:p:u:h" OPTION; do
 		case "$OPTION" in
 		s)
-			SOURCE="$OPTARG"
+			if git_is_url "$OPTARG"; then
+				REPO="$OPTARG"
+				SOURCE=$(git_name "$OPTARG")
+			else
+				SOURCE="$OPTARG"
+			fi
 			;;
 		v)
 			VERSION="$OPTARG"
+			;;
+		b)
+			BRANCH="$BRANCH"
 			;;
 		p)
 			for item in ${OPTARG/,/ }; do
@@ -130,11 +178,16 @@ options() {
 
 	test -n "$SOURCE" || usage "Image source is required."
 	test -n "$VERSION" || usage "Version is required."
+	test -z "$REPO" -a -n "$BRANCH" && usage "Branch option is only valid with git repos."
 }
 
 build_images() {
 	# Build images using the configured options.
 	local source_path="$SOURCES/$SOURCE"
+	if [ -n "$REPO" ]; then
+		git_clone "$REPO" "$SOURCES/$SOURCE" "$BRANCH" || fatal "Failed to clone or update repo."
+	fi
+
 	test -d "$source_path" || fatal "Image source '$SOURCE' not found."
 	cd "$source_path" || fatal "Failed to cd to '$source_path'."
 	test -f template.json || fatal "Image source '$SOURCE' is missing template.json."
