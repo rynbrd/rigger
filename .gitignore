@@ -1,5 +1,6 @@
-.data
+*.pem
 *.sw*
+.data
 artifacts
 packer_cache
 sources
