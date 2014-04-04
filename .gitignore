@@ -3,3 +3,4 @@
 artifacts
 packer_cache
 sources
+sources.cfg
