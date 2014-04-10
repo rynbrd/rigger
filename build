@@ -153,6 +153,7 @@ options() {
 			else
 				SOURCE="$OPTARG"
 			fi
+			SOURCE_PATH="$SOURCES/$SOURCE"
 			;;
 		v)
 			VERSION="$OPTARG"
@@ -181,21 +182,28 @@ options() {
 	test -z "$REPO" -a -n "$BRANCH" && usage "Branch option is only valid with git repos."
 }
 
-build_images() {
-	# Build images using the configured options.
-	local source_path="$SOURCES/$SOURCE"
+source_fetch() {
+	# Grab sources from repo if git is being used.
 	if [ -n "$REPO" ]; then
-		git_clone "$REPO" "$SOURCES/$SOURCE" "$BRANCH" || fatal "Failed to clone or update repo."
+		info "$SOURCE: Fetching from '$REPO'."
+		git_clone "$REPO" "$SOURCE_PATH" "$BRANCH" || fatal "$SOURCE: Fetch failed."
 	fi
+}
 
-	test -d "$source_path" || fatal "Image source '$SOURCE' not found."
-	cd "$source_path" || fatal "Failed to cd to '$source_path'."
-	test -f template.json || fatal "Image source '$SOURCE' is missing template.json."
-
-	if [ -x "configure" ]; then
-		info "Sourcing configure."
-		source ./configure || fatal "Failed to source configure."
+source_configure() {
+	# Configure for the requested source.
+	cd "$SOURCE_PATH" || fatal "$SOURCE: Could not cd to '$SOURCE_PATH'."
+	if [ -e "configure" ]; then
+		info "$SOURCE: Configuring."
+		source ./configure || fatal "$SOURCE: Failed to source configure."
 	fi
+}
+
+source_build() {
+	# Build images for the source.
+	info "$SOURCE: Building images: ${PLATFORMS[@]}."
+	cd "$SOURCE_PATH" || fatal "$SOURCE: Could not cd to '$SOURCE_PATH'."
+	test -f template.json || fatal "$SOURCE: Source is missing template.json."
 
 	local packer_args=()
 	if [ ${#PLATFORMS[@]} -ne 0 ]; then
@@ -208,12 +216,17 @@ build_images() {
 
 	export ARTIFACTS VERSION
 	PACKER_CACHE_DIR="$CACHE" packer build -force "${packer_args[@]}" template.json | tee -a "$LOG"
-	local res=$?
-	rmdir --ignore-fail-on-non-empty "$BASE/packer_cache"
-	return $res
+}
+
+source_cleanup() {
+	# Clean up after all the things.
+	rmdir --ignore-fail-on-non-empty "$BASE/packer_cache" 2> /dev/null
 }
 
 init
 options "$@"
+source_fetch
+source_configure
 packer_install
-build_images
+source_build
+source_cleanup
