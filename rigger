@@ -192,9 +192,12 @@ source_fetch() {
 
 source_configure() {
 	# Configure for the requested source.
+	info "$SOURCE: Configuring."
+	if [ -e "$BASE/sources.cfg" ]; then
+		source "$BASE/sources.cfg" || fatal "$SOURCE: Failed to source sources.cfg."
+	fi
 	cd "$SOURCE_PATH" || fatal "$SOURCE: Could not cd to '$SOURCE_PATH'."
 	if [ -e "configure" ]; then
-		info "$SOURCE: Configuring."
 		source ./configure || fatal "$SOURCE: Failed to source configure."
 	fi
 }

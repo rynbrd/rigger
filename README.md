@@ -44,6 +44,13 @@ Rigger is currently called as follows:
 
 - __name=value__ - Additional user variables to pass to Packer.
 
+Source Configuration
+--------------------
+Sources are configured in two ways: through the use of an optional sources.cfg
+file in the Rigger root directory and an optional configure file in source root
+directory. These are bash files and, if they exist, are sourced by the rigger
+script. See the [CoreOS source](rigger-coreos) for an example of this usage.
+
 License
 -------
 This software project is licensed under the BSD-derived license and is
@@ -51,3 +58,4 @@ copyright (c) 2014 Ryan Bourgeois. A copy of the license is included in the
 LICENSE file. If it is missing then a copy may be found on the project page.
 
 [packer]: http://packer.io "Packer"
+[rigger-coreos]: https://github.com/BlueDragonX/rigger-coreos "Rigger CoreOS Source"
