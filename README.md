@@ -7,7 +7,7 @@ How It Works
 Rigger's primary purpose is to enforce repeatability in the image build process
 while maintaining ease of use. It maintains specific versions of its own
 dependencies in an effort to minimize the effects of version changes. It uses
-[Packer](packer) for all the heavy lifting and sets constraints around how
+[Packer][packer] for all the heavy lifting and sets constraints around how
 Packer is called.
 
 Rigger has two directories related to the image build process. These are:
@@ -49,7 +49,7 @@ Source Configuration
 Sources are configured in two ways: through the use of an optional sources.cfg
 file in the Rigger root directory and an optional configure file in source root
 directory. These are bash files and, if they exist, are sourced by the rigger
-script. See the [CoreOS source](rigger-coreos) for an example of this usage.
+script. See the [CoreOS source][rigger-coreos] for an example of this usage.
 
 License
 -------
