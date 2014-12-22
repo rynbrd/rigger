@@ -65,7 +65,7 @@ packer_install() {
 	test -e "$PACKER" && rm -rf "$PACKER"
 	mkdir -p "$PACKER" | log || fatal "Packer: Creation of '$PACKER' failed."
 	local platform=$(uname -s | tr '[:upper:]' '[:lower:]')
-	local url="$PACKER_BASE_URL/${PACKER_VERSION}_${platform}_amd64.zip"
+	local url="$PACKER_BASE_URL/packer_${PACKER_VERSION}_${platform}_amd64.zip"
 	local dest="$TMP/packer_${PACKER_VERSION}_${platform}_amd64.zip"
 	if ! [ -e "$dest" ]; then
 		info "Packer: Downloading to '$dest'."
