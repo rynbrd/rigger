@@ -65,14 +65,20 @@ packer_install() {
 	test -e "$PACKER" && rm -rf "$PACKER"
 	mkdir -p "$PACKER" | log || fatal "Packer: Creation of '$PACKER' failed."
 	local platform=$(uname -s | tr '[:upper:]' '[:lower:]')
-	local url="$PACKER_BASE_URL/${PACKER_VERSION}_${platform}_amd64.zip"
+	local url="$PACKER_BASE_URL/packer_${PACKER_VERSION}_${platform}_amd64.zip"
 	local dest="$TMP/packer_${PACKER_VERSION}_${platform}_amd64.zip"
+
+	info "Packer: Downloading to '$dest'."
 	if ! [ -e "$dest" ]; then
-		info "Packer: Downloading to '$dest'."
-		wget -q "$url" -O "$dest" | log || fatal "Packer: Download from '$url' failed."
+		curl --progress-bar --remote-time --create-dirs -o "$dest" --fail \
+			-H "Accept: application/zip" -LR "$url" \
+		| log || fatal "Packer: Download from '$url' failed."
 	else
-		info "Packer: Using cached archive at '$dest'."
+		curl --progress-bar --remote-time --create-dirs -o "$dest" --fail \
+			-H "Accept: application/zip" -LR "$url" -z "$dest" \
+		| log || fatal "Packer: Download from '$url' failed."
 	fi
+
 	info "Packer: Installing to '$PACKER'."
 	cd "$PACKER" || fatal "Packer: Failed to cd to '$PACKER'."
 	unzip -o "$dest" 2>&1 | log || fatal "Packer: Failed to extract archive."

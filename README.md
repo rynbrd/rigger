@@ -23,6 +23,26 @@ Rigger has two directories related to the image build process. These are:
 Rigger keeps a cache of its dependencies, as well as a log of the last run, in
 _.data_. The Packer cache is also kept under this location.
 
+Requirements
+-------------
+You will need *git*, *curl*, *egrep*, *unzip* and *xz-utils* for Rigger.
+*Packer* will be downloaded for you.
+
+For example, with Gentoo you need to…:
+
+```bash
+emerge -n dev-vcs/git net-misc/curl app-arch/unzip app-arch/xz-utils
+```
+
+… and with Ubuntu:
+
+```bash
+# docker run -ti --rm ubuntu:14.04 /bin/bash
+
+apt-get -qq update && apt-get -qq -y upgrade \
+&& apt-get -y install git curl unzip xz-utils
+```
+
 Calling Rigger
 ---------------
 Rigger is currently called as follows:
